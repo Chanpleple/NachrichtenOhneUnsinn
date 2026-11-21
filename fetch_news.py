@@ -64,7 +64,7 @@ def get_media(entry,link,description):
                 if not video:video=url
         elif tag=='videoid' and node.text:video_id=node.text.strip()
     if not image:
-        match=re.search(r'<img[^>]+src=["\\']([^"\\']+)["\\']',raw_description or description or '',re.I)
+        match=re.search("<img[^>]+src=[\"']([^\"']+)[\"']",raw_description or description or '',re.I)
         if match:image=html.unescape(match.group(1))
     if not video_id and link:
         parsed=urlparse(link)
