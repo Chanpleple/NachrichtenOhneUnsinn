@@ -1,7 +1,7 @@
 name: Update news feeds
 on:
   schedule:
-    - cron: '*/5 * * * *'
+    - cron: '2-59/5 * * * *'
   workflow_dispatch:
   push:
     paths:
@@ -13,6 +13,7 @@ permissions:
 jobs:
   update:
     runs-on: ubuntu-latest
+    timeout-minutes: 4
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -20,11 +21,11 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Fetch RSS feeds
+      - name: Fetch RSS, Atom and video feeds
         run: python fetch_news.py
       - name: Send push notifications for new articles
         env:
-          CF_PUSH_TOKEN: ${{ secrets.CF_PUSH_TOKEN }}
+          CF_PUSH_TOKEN: \${{ secrets.CF_PUSH_TOKEN }}
         run: |
           COUNT=$(python -c "import json; print(len(json.load(open('news.json', encoding='utf-8')).get('new_articles', [])))")
           if [ "$COUNT" -gt 0 ] && [ -n "$CF_PUSH_TOKEN" ]; then
@@ -40,4 +41,3 @@ jobs:
           git add news.json
           git diff --cached --quiet || git commit -m 'Update news feed data'
           git push
-
