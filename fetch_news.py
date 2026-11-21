@@ -73,13 +73,20 @@ def get_media(entry,link,description):
     embed='https://www.youtube-nocookie.com/embed/'+video_id if re.fullmatch(r'[A-Za-z0-9_-]{6,20}',video_id or '') else ''
     return image,video,embed
 def fetch_feed(source):
-    feed_url=quote(source['url'],safe=":/?&=%#[]@!{'User-Agent':'Mozilla/5.0 (compatible; AkhbarBlaharaa/2.0)','Accept':'application/rss+xml, application/atom+xml, application/xml, text/xml'})
-    with urllib.request.urlopen(req,timeout=14) as response:raw=response.read(2500000)
+    feed_url=quote(source['url'],safe=":/?&=%#[]@!$'()*+,;")
+    req=urllib.request.Request(feed_url,headers={
+        'User-Agent':'Mozilla/5.0 (compatible; AkhbarBlaharaa/2.0)',
+        'Accept':'application/rss+xml, application/atom+xml, application/xml, text/xml'
+    })
+    with urllib.request.urlopen(req,timeout=14) as response:
+        raw=response.read(2500000)
     root=ET.fromstring(raw)
     entries=[n for n in root.iter() if local(n.tag) in ('item','entry')]
     results=[]
     for entry in entries[:MAX_PER_SOURCE]:
-        title=child_text(entry,('title',));description=child_text(entry,('description','summary','encoded','content'));link=get_link(entry)
+        title=child_text(entry,('title',))
+        description=child_text(entry,('description','summary','encoded','content'))
+        link=get_link(entry)
         if not title or not link or urlparse(link).scheme not in ('http','https'):continue
         image,video,embed=get_media(entry,link,description)
         uid=hashlib.sha256((title+link).encode('utf-8')).hexdigest()[:16]
