@@ -16,3 +16,34 @@ function render(){const list=filtered();grid.innerHTML=list.map((a,i)=>`<article
 function setCategory(cat){activeCategory=cat;document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.category===cat));render();}
 async function loadNews(){const button=document.getElementById('refreshBtn');button.classList.add('is-loading');statusText.textContent='يتم تحميل الأخبار...';try{const response=await fetch('news.json?ts='+Date.now(),{cache:'no-store'});if(!response.ok)throw new Error('News data not available');const data=await response.json();articles=(data.articles||[]).filter(a=>a.title&&a.url).map(a=>({...a,category:inferCategory(a)}));if(!articles.length)throw new Error('No stories yet');ticker.textContent=articles.slice(0,14).map(a=>a.title).join('  ✦  ')||'لا توجد عناوين حالياً';document.getElementById('updatedFooter').textContent=data.updated?`آخر تحديث: ${relativeDate(data.updated)}`:'';document.getElementById('dateLine').textContent=new Intl.DateTimeFormat('ar-LB',{dateStyle:'full'}).format(new Date());const sources=[...new Set(articles.map(a=>a.source))];document.getElementById('sourceList').innerHTML=sources.map(s=>`<span class="source-chip">${esc(s)}</span>`).join('');render();}catch(err){articles=[];grid.innerHTML='';statusText.textContent='تعذر تحميل الأخبار';ticker.textContent='لا يمكن تحميل الأخبار حالياً. سيتم تحديثها عند توفر ملف الأخبار.';loadNote.textContent='بعد تفعيل GitHub Actions وتشغيله، ستظهر الأخبار هنا تلقائياً.';emptyState.classList.remove('hidden');}finally{button.classList.remove('is-loading');}}
 document.getElementById('navCats').addEventListener('click',e=>{const b=e.target.closest('[data-category]');if(b)setCategory(b.dataset.category);});searchInput.addEventListener('input',render);document.getElementById('refreshBtn').addEventListener('click',loadNews);document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();searchInput.focus();}});loadNews();
+
+const notifyButton=document.getElementById('notifyBtn');
+const notifyStatus=document.getElementById('notifyStatus');
+const breakingToggle=document.getElementById('breakingOnly');
+async function updatePushPreference(){
+ if(!('serviceWorker'in navigator)||!('PushManager'in window))return;
+ const reg=await navigator.serviceWorker.ready;
+ const sub=await reg.pushManager.getSubscription();
+ if(sub)await fetch('/api/subscribe',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({subscription:sub,breakingOnly:breakingToggle.checked})});
+}
+breakingToggle?.addEventListener('change',()=>updatePushPreference().catch(()=>{}));
+notifyButton?.addEventListener('click',async()=>{
+ if(!('serviceWorker'in navigator)||!('PushManager'in window)){notifyStatus.textContent='هذا المتصفح لا يدعم إشعارات الويب.';return;}
+ notifyButton.disabled=true;notifyStatus.textContent='جارٍ تفعيل الإشعارات...';
+ try{
+  const permission=await Notification.requestPermission();
+  if(permission!=='granted')throw new Error('permission');
+  const reg=await navigator.serviceWorker.ready;
+  const keyResponse=await fetch('/api/subscribe');
+  if(!keyResponse.ok)throw new Error('server');
+  const {publicKey}=await keyResponse.json();
+  const applicationServerKey=Uint8Array.from(atob(publicKey.replace(/-/g,'+').replace(/_/g,'/')+'='.repeat((4-publicKey.length%4)%4)),c=>c.charCodeAt(0));
+  let sub=await reg.pushManager.getSubscription();
+  if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey});
+  const saved=await fetch('/api/subscribe',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({subscription:sub,breakingOnly:breakingToggle.checked})});
+  if(!saved.ok)throw new Error('save');
+  notifyStatus.textContent='تم تفعيل الإشعارات بنجاح ✓';notifyButton.textContent='✓ الإشعارات مفعّلة';
+ }catch(error){notifyStatus.textContent=error.message==='permission'?'يرجى السماح بالإشعارات من إعدادات المتصفح.':'تعذر التفعيل الآن. تحقق من إعدادات الموقع وحاول مجدداً.';}
+ finally{notifyButton.disabled=false;}
+});
+if(notifyButton&&'serviceWorker'in navigator){navigator.serviceWorker.ready.then(async reg=>{const sub=await reg.pushManager.getSubscription();if(sub){notifyStatus.textContent='الإشعارات مفعّلة على هذا الجهاز';notifyButton.textContent='✓ الإشعارات مفعّلة';}}).catch(()=>{});}
