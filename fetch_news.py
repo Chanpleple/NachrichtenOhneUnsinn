@@ -82,7 +82,7 @@ def fetch_feed(source):
 
 def main():
     sources=json.loads(SOURCES_FILE.read_text(encoding='utf-8'))
-    all_articles=[]; failed=[]
+    previous_ids=set()\n    if OUTPUT.exists():\n        try:\n            previous=json.loads(OUTPUT.read_text(encoding='utf-8'))\n            previous_ids={a.get('id') for a in previous.get('articles',[]) if a.get('id')}\n        except Exception: pass\n    all_articles=[]; failed=[]
     for source in sources:
         try:
             found=fetch_feed(source)
@@ -97,7 +97,7 @@ def main():
         if key in seen: continue
         seen.add(key); unique.append(a)
     unique.sort(key=lambda a:a.get('date') or '',reverse=True)
-    payload={'updated':datetime.now(timezone.utc).isoformat(),'sources_total':len(sources),'sources_failed':failed,'articles':unique[:MAX_TOTAL]}
+    latest=unique[:MAX_TOTAL]\n    new_articles=[a for a in latest if a.get('id') not in previous_ids]\n    payload={'updated':datetime.now(timezone.utc).isoformat(),'sources_total':len(sources),'sources_failed':failed,'articles':latest,'new_articles':new_articles}
     OUTPUT.write_text(json.dumps(payload,ensure_ascii=False,indent=2),encoding='utf-8')
     print(f"Saved {len(payload['articles'])} stories to {OUTPUT.name}. Failed feeds: {len(failed)}")
 if __name__=='__main__': main()
