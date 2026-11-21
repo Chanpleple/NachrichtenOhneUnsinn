@@ -1,112 +1,104 @@
 #!/usr/bin/env python3
-"""Fetch public RSS/Atom feeds and build a static news.json for GitHub Pages.
-Only titles, short summaries, attribution, dates and original links are included.
-"""
+"""Fetch RSS/Atom news and video feeds; publish summaries and media metadata only."""
 import json, re, html, hashlib
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qs
 import urllib.request
 import xml.etree.ElementTree as ET
-
-ROOT = Path(__file__).resolve().parent
-SOURCES_FILE = ROOT / 'sources.json'
-OUTPUT = ROOT / 'news.json'
-MAX_PER_SOURCE = 35
-MAX_TOTAL = 180
-ATOM = '{http://www.w3.org/2005/Atom}'
-CONTENT = '{http://purl.org/rss/1.0/modules/content/}encoded'
-
+ROOT=Path(__file__).resolve().parent
+SOURCES_FILE=ROOT/'sources.json'
+OUTPUT=ROOT/'news.json'
+MAX_PER_SOURCE=30
+MAX_TOTAL=240
 def clean(text):
-    if not text: return ''
-    text = re.sub(r'<[^>]+>', ' ', str(text))
-    text = html.unescape(text)
-    return re.sub(r'\s+', ' ', text).strip()
-
-def node_text(node):
-    if node is None: return ''
-    return clean(' '.join(t for t in node.itertext() if t))
-
+    if not text:return ''
+    text=re.sub(r'<[^>]+>',' ',str(text))
+    return re.sub(r'\s+',' ',html.unescape(text)).strip()
+def local(tag):return tag.rsplit('}',1)[-1].split(':')[-1].lower()
 def parse_date(entry):
-    for key in ('pubDate','published','updated','date',ATOM+'published',ATOM+'updated'):
-        raw = entry.find(key)
-        if raw is not None:
-            value = raw.text or node_text(raw)
-            if not value: continue
+    for node in entry.iter():
+        if local(node.tag) in ('pubdate','published','updated','date') and node.text:
+            value=node.text.strip()
             try:
                 from email.utils import parsedate_to_datetime
-                dt = parsedate_to_datetime(value.strip())
-                if dt.tzinfo is None: dt=dt.replace(tzinfo=timezone.utc)
+                dt=parsedate_to_datetime(value)
+                if dt.tzinfo is None:dt=dt.replace(tzinfo=timezone.utc)
                 return dt.astimezone(timezone.utc).isoformat()
             except Exception:
                 try:
-                    dt=datetime.fromisoformat(value.strip().replace('Z','+00:00'))
-                    if dt.tzinfo is None: dt=dt.replace(tzinfo=timezone.utc)
+                    dt=datetime.fromisoformat(value.replace('Z','+00:00'))
+                    if dt.tzinfo is None:dt=dt.replace(tzinfo=timezone.utc)
                     return dt.astimezone(timezone.utc).isoformat()
-                except Exception: pass
+                except Exception:pass
     return ''
-
-def get_text(entry, *names):
-    for name in names:
-        found=entry.find(name)
-        value=node_text(found)
-        if value: return value
+def child_text(entry,names):
+    wanted={n.lower() for n in names}
+    for node in entry:
+        if local(node.tag) in wanted:
+            value=clean(' '.join(t for t in node.itertext() if t))
+            if value:return value
     return ''
-
 def get_link(entry):
-    link=get_text(entry,'link')
-    if link and urlparse(link).scheme in ('http','https'): return link
-    for atom_link in entry.findall(ATOM+'link'):
-        href=atom_link.attrib.get('href','')
-        rel=atom_link.attrib.get('rel','alternate')
-        if href and rel in ('alternate',''): return href
+    for node in entry.iter():
+        if local(node.tag)=='link':
+            value=node.attrib.get('href') or (node.text or '').strip()
+            if value and node.attrib.get('rel','alternate') in ('alternate','') and urlparse(value).scheme in ('http','https'):return value
     return ''
-
+def get_media(entry,link,description):
+    image='';video='';video_id=''
+    for node in entry.iter():
+        tag=local(node.tag);url=node.attrib.get('url') or node.attrib.get('href') or '';mime=node.attrib.get('type','').lower()
+        if tag in ('thumbnail','image') and url and not image:image=url
+        elif tag in ('content','enclosure') and url:
+            if mime.startswith('image/') or re.search(r'\.(jpg|jpeg|png|webp|gif)(?:\?|$)',url,re.I):
+                if not image:image=url
+            elif mime.startswith('video/') or re.search(r'\.(mp4|webm|m3u8)(?:\?|$)',url,re.I):
+                if not video:video=url
+        elif tag=='videoid' and node.text:video_id=node.text.strip()
+    if not image:
+        match=re.search(r'<img[^>]+src=["\\']([^"\\']+)["\\']',description or '',re.I)
+        if match:image=html.unescape(match.group(1))
+    if not video_id and link:
+        parsed=urlparse(link)
+        if 'youtube.com' in parsed.netloc:video_id=parse_qs(parsed.query).get('v',[''])[0]
+        elif 'youtu.be' in parsed.netloc:video_id=parsed.path.strip('/').split('/')[0]
+    embed='https://www.youtube-nocookie.com/embed/'+video_id if re.fullmatch(r'[A-Za-z0-9_-]{6,20}',video_id or '') else ''
+    return image,video,embed
 def fetch_feed(source):
-    req=urllib.request.Request(source['url'],headers={'User-Agent':'Mozilla/5.0 (compatible; LebanonNewsAggregator/1.0)','Accept':'application/rss+xml, application/atom+xml, application/xml, text/xml'})
-    with urllib.request.urlopen(req,timeout=18) as response:
-        raw=response.read(3_000_000)
+    req=urllib.request.Request(source['url'],headers={'User-Agent':'Mozilla/5.0 (compatible; AkhbarBlaharaa/2.0)','Accept':'application/rss+xml, application/atom+xml, application/xml, text/xml'})
+    with urllib.request.urlopen(req,timeout=14) as response:raw=response.read(2500000)
     root=ET.fromstring(raw)
-    entries=root.findall('.//item')
-    if not entries: entries=root.findall('.//'+ATOM+'entry')
+    entries=[n for n in root.iter() if local(n.tag) in ('item','entry')]
     results=[]
     for entry in entries[:MAX_PER_SOURCE]:
-        title=get_text(entry,'title')
-        description=get_text(entry,'description','summary',ATOM+'summary',CONTENT,ATOM+'content')
-        link=get_link(entry)
-        if title and link and urlparse(link).scheme in ('http','https'):
-            description=description[:500]
-            uid=hashlib.sha256((title+link).encode('utf-8')).hexdigest()[:16]
-            results.append({'id':uid,'title':title,'description':description,'url':link,'source':source['name'],'date':parse_date(entry),'category':source.get('category','لبنان')})
+        title=child_text(entry,('title',));description=child_text(entry,('description','summary','encoded','content'));link=get_link(entry)
+        if not title or not link or urlparse(link).scheme not in ('http','https'):continue
+        image,video,embed=get_media(entry,link,description)
+        uid=hashlib.sha256((title+link).encode('utf-8')).hexdigest()[:16]
+        results.append({'id':uid,'title':title,'description':description[:500],'url':link,'source':source['name'],'date':parse_date(entry),'category':source.get('category','العالم'),'image':image,'video_url':video,'video_embed':embed,'media_type':'video' if video or embed else ('image' if image else '')})
     return results
-
 def main():
-    sources=json.loads(SOURCES_FILE.read_text(encoding='utf-8'))
-    previous_ids=set()
+    sources=json.loads(SOURCES_FILE.read_text(encoding='utf-8'));previous_ids=set()
     if OUTPUT.exists():
-        try:
-            previous=json.loads(OUTPUT.read_text(encoding='utf-8'))
-            previous_ids={a.get('id') for a in previous.get('articles',[]) if a.get('id')}
-        except Exception:
-            pass
-    all_articles=[]; failed=[]
-    for source in sources:
-        try:
-            found=fetch_feed(source)
-            all_articles.extend(found)
-            print(f"OK {source['name']}: {len(found)}")
-        except Exception as exc:
-            failed.append(source['name'])
-            print(f"SKIP {source['name']}: {exc}")
-    unique=[]; seen=set()
-    for a in all_articles:
-        key=a['url'].split('#')[0].rstrip('/') or a['title'].strip().lower()
-        if key in seen: continue
-        seen.add(key); unique.append(a)
-    unique.sort(key=lambda a:a.get('date') or '',reverse=True)
-    latest=unique[:MAX_TOTAL]
+        try:previous_ids={a.get('id') for a in json.loads(OUTPUT.read_text(encoding='utf-8')).get('articles',[]) if a.get('id')}
+        except Exception:pass
+    all_articles=[];failed=[]
+    with ThreadPoolExecutor(max_workers=10) as pool:
+        jobs={pool.submit(fetch_feed,source):source for source in sources}
+        for future in as_completed(jobs):
+            source=jobs[future]
+            try:
+                found=future.result();all_articles.extend(found);print(f"OK {source['name']}: {len(found)}")
+            except Exception as exc:failed.append(source['name']);print(f"SKIP {source['name']}: {exc}")
+    unique=[];seen=set()
+    for article in all_articles:
+        key=article['url'].split('#')[0].rstrip('/') or article['title'].strip().lower()
+        if key not in seen:seen.add(key);unique.append(article)
+    unique.sort(key=lambda a:a.get('date') or '',reverse=True);latest=unique[:MAX_TOTAL]
     new_articles=[a for a in latest if a.get('id') not in previous_ids]
-    payload={'updated':datetime.now(timezone.utc).isoformat(),'sources_total':len(sources),'sources_failed':failed,'articles':latest,'new_articles':new_articles}
+    payload={'updated':datetime.now(timezone.utc).isoformat(),'sources_total':len(sources),'sources_failed':sorted(failed),'articles':latest,'new_articles':new_articles}
     OUTPUT.write_text(json.dumps(payload,ensure_ascii=False,indent=2),encoding='utf-8')
-    print(f"Saved {len(payload['articles'])} stories; {len(new_articles)} new stories. Failed feeds: {len(failed)}")
-if __name__=='__main__': main()
+    print(f"Saved {len(latest)} stories; {len(new_articles)} new stories. Failed feeds: {len(failed)}")
+if __name__=='__main__':main()
