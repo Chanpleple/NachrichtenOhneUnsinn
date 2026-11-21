@@ -48,17 +48,23 @@ def get_link(entry):
     return ''
 def get_media(entry,link,description):
     image='';video='';video_id=''
+    raw_description=''
     for node in entry.iter():
+        if local(node.tag) in ('description','summary','encoded','content') and not raw_description:
+            raw_description=''.join(node.itertext())
         tag=local(node.tag);url=node.attrib.get('url') or node.attrib.get('href') or '';mime=node.attrib.get('type','').lower()
         if tag in ('thumbnail','image') and url and not image:image=url
         elif tag in ('content','enclosure') and url:
-            if mime.startswith('image/') or re.search(r'\.(jpg|jpeg|png|webp|gif)(?:\?|$)',url,re.I):
+            medium=node.attrib.get('medium','').lower()
+            if medium=='image' and not image:image=url
+            elif medium=='video' and not video:video=url
+            elif mime.startswith('image/') or re.search(r'\.(jpg|jpeg|png|webp|gif)(?:\?|$)',url,re.I):
                 if not image:image=url
             elif mime.startswith('video/') or re.search(r'\.(mp4|webm|m3u8)(?:\?|$)',url,re.I):
                 if not video:video=url
         elif tag=='videoid' and node.text:video_id=node.text.strip()
     if not image:
-        match=re.search(r'<img[^>]+src=["\\']([^"\\']+)["\\']',description or '',re.I)
+        match=re.search(r'<img[^>]+src=["\\']([^"\\']+)["\\']',raw_description or description or '',re.I)
         if match:image=html.unescape(match.group(1))
     if not video_id and link:
         parsed=urlparse(link)
@@ -80,7 +86,7 @@ def fetch_feed(source):
         results.append({'id':uid,'title':title,'description':description[:500],'url':link,'source':source['name'],'date':parse_date(entry),'category':source.get('category','العالم'),'image':image,'video_url':video,'video_embed':embed,'media_type':'video' if video or embed else ('image' if image else '')})
     return results
 def main():
-    sources=json.loads(SOURCES_FILE.read_text(encoding='utf-8'));previous_ids=set()
+    sources=json.loads(SOURCES_FILE.read_text(encoding='utf-8'));previous_ids=set();previous_sources=set()
     if OUTPUT.exists():
         try:previous_ids={a.get('id') for a in json.loads(OUTPUT.read_text(encoding='utf-8')).get('articles',[]) if a.get('id')}
         except Exception:pass
@@ -97,8 +103,8 @@ def main():
         key=article['url'].split('#')[0].rstrip('/') or article['title'].strip().lower()
         if key not in seen:seen.add(key);unique.append(article)
     unique.sort(key=lambda a:a.get('date') or '',reverse=True);latest=unique[:MAX_TOTAL]
-    new_articles=[a for a in latest if a.get('id') not in previous_ids]
-    payload={'updated':datetime.now(timezone.utc).isoformat(),'sources_total':len(sources),'sources_failed':sorted(failed),'articles':latest,'new_articles':new_articles}
+    new_articles=[a for a in latest if a.get('id') not in previous_ids and a.get('source') in previous_sources]
+    payload={'updated':datetime.now(timezone.utc).isoformat(),'sources_total':len(sources),'source_names':[s['name'] for s in sources],'sources_failed':sorted(failed),'articles':latest,'new_articles':new_articles}
     OUTPUT.write_text(json.dumps(payload,ensure_ascii=False,indent=2),encoding='utf-8')
     print(f"Saved {len(latest)} stories; {len(new_articles)} new stories. Failed feeds: {len(failed)}")
 if __name__=='__main__':main()
