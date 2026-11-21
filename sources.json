@@ -1,0 +1,10 @@
+[
+  {"name":"LBCI - آخر الأخبار","url":"https://www.lbcgroup.tv/Rss/latest-news/ar","website":"https://www.lbcgroup.tv/","category":"لبنان"},
+  {"name":"LBCI - أخبار لبنان","url":"https://www.lbcgroup.tv/Rss/News/ar/1/أخبار-لبنان","website":"https://www.lbcgroup.tv/","category":"لبنان"},
+  {"name":"Al Jadeed - RSS","url":"https://www.aljadeed.tv/rss/en","website":"https://www.aljadeed.tv/","category":"لبنان"},
+  {"name":"Al Jazeera Arabic","url":"https://www.aljazeera.net/aljazeera/rss","website":"https://www.aljazeera.net/","category":"العالم"},
+  {"name":"Al Arabiya","url":"https://www.alarabiya.net/tools/rss","website":"https://www.alarabiya.net/","category":"العالم"},
+  {"name":"Sky News Arabia","url":"https://www.skynewsarabia.com/rss","website":"https://www.skynewsarabia.com/","category":"العالم"},
+  {"name":"Al Araby Al Jadeed","url":"https://www.alaraby.co.uk/rss.xml","website":"https://www.alaraby.co.uk/","category":"العالم"},
+  {"name":"Asharq","url":"https://asharq.com/rss/","website":"https://asharq.com/","category":"العالم"}
+]
