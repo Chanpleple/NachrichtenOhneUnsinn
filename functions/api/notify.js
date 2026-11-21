@@ -1,6 +1,6 @@
 const PUBLIC_KEY="BOJTzsASZnhToYFcuzKZD-ZvgD3s-WaYyZy89wCncaMoC301S0C7fhNyYd5LO2LjCxE8W8oPjrsvWItu1-6z_NY";
 const enc=new TextEncoder();
-const b64u=b=>btoa(String.fromCharCode(...new Uint8Array(b))).replace(/\\+/g,"-").replace(/\\//g,"_").replace(/=+$/,"");
+const b64u=b=>btoa(String.fromCharCode(...new Uint8Array(b))).split('+').join('-').split('/').join('_').replace(/=+$/, '');
 const fromB64u=s=>Uint8Array.from(atob(s.replace(/-/g,"+").replace(/_/g,"/")+"=".repeat((4-s.length%4)%4)),c=>c.charCodeAt(0));
 const concat=(...parts)=>{const n=parts.reduce((s,p)=>s+p.length,0),o=new Uint8Array(n);let i=0;for(const p of parts){o.set(p,i);i+=p.length;}return o;};
 async function hmac(key,data){const k=await crypto.subtle.importKey("raw",key,{name:"HMAC",hash:"SHA-256"},false,["sign"]);return new Uint8Array(await crypto.subtle.sign("HMAC",k,data));}
