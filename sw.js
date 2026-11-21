@@ -1,4 +1,6 @@
-const CACHE='akhbar-blaharaa-v1';
+const CACHE='akhbar-blaharaa-v2';
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(c=>c.addAll(['/','/style.css','/news.js','/manifest.webmanifest','/icon.svg'])));self.skipWaiting();});
-self.addEventListener('activate',event=>{event.waitUntil(self.clients.claim());});
-self.addEventListener('fetch',event=>{const u=new URL(event.request.url);if(event.request.method!=='GET'||u.origin!==location.origin||u.pathname==='/news.json')return;event.respondWith(caches.match(event.request).then(c=>c||fetch(event.request).then(r=>{if(r.ok){const copy=r.clone();caches.open(CACHE).then(cache=>cache.put(event.request,copy));}return r;})));});
+self.addEventListener('activate',event=>{event.waitUntil((async()=>{for(const k of await caches.keys())if(k!==CACHE)await caches.delete(k);await self.clients.claim();})());});
+self.addEventListener('fetch',event=>{const u=new URL(event.request.url);if(event.request.method!=='GET'||u.origin!==location.origin||u.pathname==='/news.json'||u.pathname.startsWith('/api/'))return;event.respondWith(caches.match(event.request).then(c=>c||fetch(event.request).then(r=>{if(r.ok){const copy=r.clone();caches.open(CACHE).then(cache=>cache.put(event.request,copy));}return r;})));});
+self.addEventListener('push',event=>{let data={title:'أخبار بلا هراء',body:'خبر جديد',url:'/'};try{data={...data,...event.data.json()};}catch{}event.waitUntil(self.registration.showNotification(data.title,{body:data.body,icon:'/icon.svg',badge:'/icon.svg',dir:'rtl',lang:'ar',data:{url:data.url},tag:'akhbar-'+Date.now()}));});
+self.addEventListener('notificationclick',event=>{event.notification.close();const url=event.notification.data?.url||'/';event.waitUntil(clients.matchAll({type:'window',includeUncontrolled:true}).then(list=>{for(const client of list){if('focus'in client){client.navigate(url);return client.focus();}}return clients.openWindow(url);}));});
