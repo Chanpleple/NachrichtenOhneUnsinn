@@ -1,16 +1,86 @@
 [
-{"name":"LBCI - آخر الأخبار","url":"https://www.lbcgroup.tv/Rss/latest-news/ar","website":"https://www.lbcgroup.tv/","category":"لبنان"},
-{"name":"LBCI - أخبار لبنان","url":"https://www.lbcgroup.tv/Rss/News/ar/1/أخبار-لبنان","website":"https://www.lbcgroup.tv/","category":"لبنان"},
-{"name":"Al Jadeed - RSS","url":"https://www.aljadeed.tv/rss/en","website":"https://www.aljadeed.tv/","category":"لبنان"},
-{"name":"Al Jazeera Arabic","url":"https://www.aljazeera.net/aljazeerarss/a7c186be-1baa-4bd4-9d80-a84db769f779/73d0e1b4-532f-45ef-b135-bfdff8b8cab9","website":"https://www.aljazeera.net/","category":"العالم"},
-{"name":"Al Jazeera English","url":"https://www.aljazeera.com/xml/rss/all.xml","website":"https://www.aljazeera.com/","category":"العالم"},
-{"name":"Al Jazeera Arabic - فيديو","url":"https://www.youtube.com/feeds/videos.xml?channel_id=UCfiwzLy-8yKzIbsmZTzxDgw","website":"https://www.youtube.com/","category":"العالم"},
-{"name":"Al Jazeera Mubasher - فيديو","url":"https://www.youtube.com/feeds/videos.xml?channel_id=UCCv1Pd24oPErw5S7zJWltnQ","website":"https://www.youtube.com/","category":"العالم"},
-{"name":"Al Jazeera Documentary - فيديو","url":"https://www.youtube.com/feeds/videos.xml?channel_id=UC0LSnqrwqtMwl2YwfUpO66g","website":"https://www.youtube.com/","category":"العالم"},
-{"name":"BBC Arabic","url":"https://feeds.bbci.co.uk/arabic/rss.xml","website":"https://www.bbc.com/arabic","category":"العالم"},
-{"name":"BBC Arabic - الشرق الأوسط","url":"https://feeds.bbci.co.uk/arabic/middleeast/rss.xml","website":"https://www.bbc.com/arabic","category":"العالم"},
-{"name":"Al Arabiya","url":"https://www.alarabiya.net/tools/rss","website":"https://www.alarabiya.net/","category":"العالم"},
-{"name":"Sky News Arabia","url":"https://www.skynewsarabia.com/rss","website":"https://www.skynewsarabia.com/","category":"العالم"},
-{"name":"Al Araby Al Jadeed","url":"https://www.alaraby.co.uk/rss.xml","website":"https://www.alaraby.co.uk/","category":"العالم"},
-{"name":"Asharq","url":"https://asharq.com/rss/","website":"https://asharq.com/","category":"العالم"}
+  {
+    "name": "LBCI - آخر الأخبار",
+    "url": "https://www.lbcgroup.tv/Rss/latest-news/ar",
+    "website": "https://www.lbcgroup.tv/",
+    "category": "لبنان"
+  },
+  {
+    "name": "LBCI - أخبار لبنان",
+    "url": "https://www.lbcgroup.tv/Rss/News/ar/1/أخبار-لبنان",
+    "website": "https://www.lbcgroup.tv/",
+    "category": "لبنان"
+  },
+  {
+    "name": "Al Jazeera Arabic",
+    "url": "https://www.aljazeera.net/aljazeerarss/a7c186be-1baa-4bd4-9d80-a84db769f779/73d0e1b4-532f-45ef-b135-bfdff8b8cab9",
+    "website": "https://www.aljazeera.net/",
+    "category": "العالم"
+  },
+  {
+    "name": "Al Jazeera English",
+    "url": "https://www.aljazeera.com/xml/rss/all.xml",
+    "website": "https://www.aljazeera.com/",
+    "category": "العالم"
+  },
+  {
+    "name": "Al Jazeera Arabic - فيديو",
+    "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCfiwzLy-8yKzIbsmZTzxDgw",
+    "website": "https://www.youtube.com/",
+    "category": "العالم"
+  },
+  {
+    "name": "Al Jazeera Mubasher - فيديو",
+    "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCCv1Pd24oPErw5S7zJWltnQ",
+    "website": "https://www.youtube.com/",
+    "category": "العالم"
+  },
+  {
+    "name": "Al Jazeera Documentary - فيديو",
+    "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UC0LSnqrwqtMwl2YwfUpO66g",
+    "website": "https://www.youtube.com/",
+    "category": "العالم"
+  },
+  {
+    "name": "BBC Arabic",
+    "url": "https://feeds.bbci.co.uk/arabic/rss.xml",
+    "website": "https://www.bbc.com/arabic",
+    "category": "العالم"
+  },
+  {
+    "name": "BBC Arabic - الشرق الأوسط",
+    "url": "https://feeds.bbci.co.uk/arabic/middleeast/rss.xml",
+    "website": "https://www.bbc.com/arabic",
+    "category": "العالم"
+  },
+  {
+    "name": "Sky News Arabia",
+    "url": "https://www.skynewsarabia.com/rss",
+    "website": "https://www.skynewsarabia.com/",
+    "category": "العالم"
+  },
+  {
+    "name": "Al Araby Al Jadeed",
+    "url": "https://www.alaraby.co.uk/rss.xml",
+    "website": "https://www.alaraby.co.uk/",
+    "category": "العالم"
+  },
+  {
+    "name": "Al Jadeed - أخبار عبر Google News",
+    "url": "https://news.google.com/rss/search?q=site%3Aaljadeed.tv&hl=ar&gl=LB&ceid=LB%3Aar",
+    "website": "https://www.aljadeed.tv/",
+    "category": "لبنان"
+  },
+  {
+    "name": "Al Arabiya - أخبار عبر Google News",
+    "url": "https://news.google.com/rss/search?q=site%3Aalarabiya.net&hl=ar&gl=SA&ceid=SA%3Aar",
+    "website": "https://www.alarabiya.net/",
+    "category": "العالم"
+  },
+  {
+    "name": "Asharq - أخبار عبر Google News",
+    "url": "https://news.google.com/rss/search?q=site%3Aasharq.com&hl=ar&gl=SA&ceid=SA%3Aar",
+    "website": "https://asharq.com/",
+    "category": "العالم"
+  }
 ]
