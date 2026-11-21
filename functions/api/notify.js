@@ -1,4 +1,4 @@
-const PUBLIC_KEY="BGF2wdEJzfjrSMLI_Vdp6FzgB94rWJmGIxZ-Pc-eydM0Kvyixhkd3lt_Q9xlrLT3z_mHcOqtQG6UnPcJMgt4f5o";
+const PUBLIC_KEY="BOJTzsASZnhToYFcuzKZD-ZvgD3s-WaYyZy89wCncaMoC301S0C7fhNyYd5LO2LjCxE8W8oPjrsvWItu1-6z_NY";
 const enc=new TextEncoder();
 const b64u=b=>btoa(String.fromCharCode(...new Uint8Array(b))).replace(/\\+/g,"-").replace(/\\//g,"_").replace(/=+$/,"");
 const fromB64u=s=>Uint8Array.from(atob(s.replace(/-/g,"+").replace(/_/g,"/")+"=".repeat((4-s.length%4)%4)),c=>c.charCodeAt(0));
